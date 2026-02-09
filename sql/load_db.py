@@ -1,14 +1,17 @@
 import duckdb
 import os
 
-# Define paths
-DB_PATH = "../ipl_analytics.duckdb"
-PROCESSED_DATA_PATH = "../data/processed/"
+# Define paths based on script location
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(BASE_DIR, "ipl_analytics.duckdb")
+PROCESSED_DATA_PATH = os.path.join(BASE_DIR, "data", "processed")
 
 # Check if processed files exist
-if not os.path.exists(PROCESSED_DATA_PATH + "ipl_ball_by_ball_enriched.csv"):
-    print("❌ Processed data not found. Run notebooks first.")
-    exit()
+required_files = ["ipl_ball_enriched.csv", "ipl_player_metrics.csv", "ipl_team_metrics.csv"]
+for f in required_files:
+    if not os.path.exists(os.path.join(PROCESSED_DATA_PATH, f)):
+        print(f"❌ {f} not found at {PROCESSED_DATA_PATH}. Run notebooks first.")
+        exit()
 
 # Connect to DuckDB (creates file if not exists)
 con = duckdb.connect(DB_PATH)
@@ -17,16 +20,19 @@ print("DATA LOADING START...")
 
 # Create tables from CSVs directly
 # 1. Enriched Ball-by-Ball
-con.execute(f"CREATE OR REPLACE TABLE ipl_ball_by_ball AS SELECT * FROM read_csv_auto('{PROCESSED_DATA_PATH}ipl_ball_by_ball_enriched.csv')")
-print("✅ Loaded ipl_ball_by_ball")
+csv_path = os.path.join(PROCESSED_DATA_PATH, 'ipl_ball_enriched.csv')
+con.execute(f"CREATE OR REPLACE TABLE ipl_ball_enriched AS SELECT * FROM read_csv_auto('{csv_path}')")
+print("✅ Loaded ipl_ball_enriched")
 
-# 2. Player Stats
-con.execute(f"CREATE OR REPLACE TABLE player_stats AS SELECT * FROM read_csv_auto('{PROCESSED_DATA_PATH}player_stats.csv')")
-print("✅ Loaded player_stats")
+# 2. Player Metrics
+csv_path = os.path.join(PROCESSED_DATA_PATH, 'ipl_player_metrics.csv')
+con.execute(f"CREATE OR REPLACE TABLE ipl_player_metrics AS SELECT * FROM read_csv_auto('{csv_path}')")
+print("✅ Loaded ipl_player_metrics")
 
-# 3. Matches Enriched
-con.execute(f"CREATE OR REPLACE TABLE matches_enriched AS SELECT * FROM read_csv_auto('{PROCESSED_DATA_PATH}matches_enriched.csv')")
-print("✅ Loaded matches_enriched")
+# 3. Team Metrics
+csv_path = os.path.join(PROCESSED_DATA_PATH, 'ipl_team_metrics.csv')
+con.execute(f"CREATE OR REPLACE TABLE ipl_team_metrics AS SELECT * FROM read_csv_auto('{csv_path}')")
+print("✅ Loaded ipl_team_metrics")
 
 # Verify
 print("\n--- TABLE SUMMARY ---")
